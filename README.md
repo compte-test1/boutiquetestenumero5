@@ -249,4 +249,415 @@
                 name: "Robe de Soirée Élégante",
                 price: 75000,
                 originalPrice: 95000,
-                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/4
+                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/4f6e42aa-1393-409a-8d75-35dc173309c3.png",
+                category: "Robes",
+                rating: 4.8
+            },
+            {
+                id: 2,
+                name: "Top Couture Premium",
+                price: 45000,
+                originalPrice: 65000,
+                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/a1a416cf-2ed9-4826-b0fe-b0bf9ac24fba.png",
+                category: "Hauts",
+                rating: 4.6
+            },
+            {
+                id: 3,
+                name: "Robe Cocktail Diamants",
+                price: 89000,
+                originalPrice: 120000,
+                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/dc732eb3-2b4e-46f9-bca1-86c42649759c.png",
+                category: "Robes",
+                rating: 4.9
+            },
+            {
+                id: 4,
+                name: "Montre Prestige Or",
+                price: 125000,
+                originalPrice: 180000,
+                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/58eefe4f-a865-4b1a-b96a-89a1659638b2.png",
+                category: "Accessoires",
+                rating: 5.0
+            }
+        ];
+
+        // Panier
+        let cart = [];
+
+        // Éléments du DOM
+        const productsContainer = document.getElementById('productsContainer');
+        const cartBtn = document.getElementById('cartBtn');
+        const closeCart = document.getElementById('closeCart');
+        const cartOverlay = document.getElementById('cartOverlay');
+        const cartItems = document.getElementById('cartItems');
+        const cartCount = document.getElementById('cartCount');
+        const cartTotal = document.getElementById('cartTotal');
+        const validateOrderBtn = document.getElementById('validateOrderBtn');
+        const adminBtn = document.getElementById('adminBtn');
+        const adminPanel = document.getElementById('adminPanel');
+        const closeAdmin = document.getElementById('closeAdmin');
+
+        // Afficher les produits
+        function displayProducts() {
+            productsContainer.innerHTML = '';
+            products.forEach(product => {
+                const discount = Math.round((1 - product.price / product.originalPrice) * 100);
+                
+                const productElement = document.createElement('div');
+                productElement.className = 'bg-gray-800 rounded-xl overflow-hidden border border-yellow-400/20 product-card transition duration-300';
+                productElement.innerHTML = `
+                    <div class="relative">
+                        <img src="${product.image}" alt="${product.name}" class="w-full h-64 object-cover">
+                        ${discount > 0 ? `
+                        <span class="absolute top-3 left-3 bg-yellow-400 text-black px-2 py-1 rounded text-xs font-bold">
+                            -${discount}%
+                        </span>` : ''}
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold mb-2">${product.name}</h3>
+                        <div class="flex items-center mb-3">
+                            ${Array(5).fill().map((_, i) => 
+                                `<svg class="w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-600'}" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>`
+                            ).join('')}
+                            <span class="text-xs text-gray-400 ml-2">${product.rating}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-yellow-400 font-bold">${product.price.toLocaleString()} FCFA</p>
+                                ${product.price < product.originalPrice ? 
+                                    `<p class="text-gray-500 text-sm line-through">${product.originalPrice.toLocaleString()} FCFA</p>` : ''}
+                            </div>
+                            <button class="bg-yellow-400 hover:bg-yellow-500 text-black px-3 py-1 rounded text-sm add-to-cart" data-id="${product.id}">
+                                Ajouter
+                            </button>
+                        </div>
+                    </div>
+                `;
+                productsContainer.appendChild(productElement);
+            });
+        }
+
+        // Mettre à jour le panier
+        function updateCart() {
+            cartItems.innerHTML = '';
+            let total = 0;
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                const cartItem = document.createElement('div');
+                cartItem.className = 'flex justify-between items-center';
+                cartItem.innerHTML = `
+                    <span>${item.name} (x${item.quantity})</span>
+                    <span>${itemTotal.toLocaleString()} FCFA</span>
+                `;
+                cartItems.appendChild(cartItem);
+            });
+            cartTotal.innerText = total.toLocaleString() + ' FCFA';
+            cartCount.innerText = cart.length;
+            cartCount.classList.toggle('hidden', cart.length === 0);
+        }
+
+        // Ajouter au panier
+        productsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('add-to-cart')) {
+                const productId = e.target.getAttribute('data-id');
+                const product = products.find(p => p.id == productId);
+                const existingItem = cart.find(item => item.id === product.id);
+                if (existingItem) {
+                    existingItem.quantity++;
+                } else {
+                    cart.push({ ...product, quantity: 1 });
+                }
+                updateCart();
+            }
+        });
+
+        // Ouvrir le panier
+        cartBtn.addEventListener('click', () => {
+            cartOverlay.classList.remove('hidden');
+            updateCart();
+        });
+
+        // Fermer le panier
+        closeCart.addEventListener('click', () => {
+            cartOverlay.classList.add('hidden');
+        });
+
+        // Valider la commande (afficher le formulaire)
+        validateOrderBtn.addEventListener('click', () => {
+            document.getElementById('validateOrderBtn').classList.add('hidden');
+            document.getElementById('clientForm').classList.remove('hidden');
+        });
+
+        // Confirmer la commande (envoyer sur WhatsApp)
+        document.getElementById('confirmOrderBtn').addEventListener('click', () => {
+            const clientName = document.getElementById('clientName').value;
+            const clientPhone = document.getElementById('clientPhone').value;
+            const clientCity = document.getElementById('clientCity').value;
+            const clientNeighborhood = document.getElementById('clientNeighborhood').value;
+            const clientStreet = document.getElementById('clientStreet').value;
+
+            if (!clientName || !clientPhone || !clientCity || !clientNeighborhood || !clientStreet) {
+                alert("Veuillez remplir tous les champs du formulaire");
+                return;
+            }
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const orderDetails = cart.map(item => 
+                `• ${item.name} (x${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} FCFA`
+            ).join('\n');
+            
+            const message = `🌟 **Nouvelle commande NG_chopi_DIAMS** 🌟\n\n💎 **COMMANDE PREMIUM:**\n${orderDetails}\n\n💰 **TOTAL:** ${total.toLocaleString()} FCFA\n\n👤 **INFORMATIONS CLIENT:**\n📝 Nom: ${clientName}\n📞 Téléphone: ${clientPhone}\n📍 Adresse: ${clientCity}, ${clientNeighborhood}, ${clientStreet}\n\n✨ Merci pour votre commande de luxe chez NG_chopi_DIAMS !`;
+
+            const whatsappUrl = `https://wa.me/242064230404?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            
+            // Réinitialiser
+            cart = [];
+            document.getElementById('clientForm').classList.add('hidden');
+            document.getElementById('validateOrderBtn').classList.remove('hidden');
+            updateCart();
+            cartOverlay.classList.add('hidden');
+        });
+
+        // Fonctions admin
+        function loadAdminProducts() {
+            const container = document.getElementById('adminProductsList');
+            container.innerHTML = '';
+            products.forEach(product => {
+                const productElement = document.createElement('div');
+                productElement.className = 'flex justify-between items-center bg-gray-800 p-3 rounded-lg';
+                productElement.innerHTML = `
+                    <div>
+                        <h4 class="font-medium">${product.name}</h4>
+                        <p class="text-sm text-yellow-400">${product.price.toLocaleString()} FCFA</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="admin-edit-btn text-yellow-400 hover:text-yellow-300" data-id="${product.id}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </button>
+                        <button class="admin-delete-btn text-red-400 hover:text-red-300" data-id="${product.id}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(productElement);
+            });
+        }
+
+        function resetAdminForm() {
+            document.getElementById('productId').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('productOriginalPrice').value = '';
+            document.getElementById('productImage').value = '';
+            document.getElementById('productCategory').value = 'Robes';
+        }
+
+        // Sécurité admin
+        let failedAttempts = 0;
+        let isBanned = false;
+
+        // Évènements admin
+        adminBtn.addEventListener('click', () => {
+            if (isBanned) {
+                alert("Accès bloqué - Vous avez été banni pour trop de tentatives échouées");
+                return;
+            }
+
+            if (failedAttempts < 5) {
+                const code = prompt(`Entrez le code d'accès à l'espace administrateur (Tentatives restantes: ${5 - failedAttempts})`);
+                
+                if (code === "@inganibirds2007") {
+                    adminPanel.classList.remove('hidden');
+                    loadAdminProducts();
+                    failedAttempts = 0;
+                } else {
+                    failedAttempts++;
+                    
+                    if (failedAttempts >= 5) {
+                        const choice = confirm("Accès bloqué après 5 échecs\nVoulez-vous demander à réinitialiser le code?\n(Cela nécessitera une confirmation par email)");
+                        if (choice) {
+                            // Demander l'email et envoyer une demande de réinitialisation
+                            const email = prompt("Entrez votre email pour demander une réinitialisation:");
+                            if (email) {
+                                alert(`Une demande de réinitialisation a été envoyée à ${email}`);
+                                // Envoyer une requête de réinitialisation
+                                setTimeout(() => alert("Email envoyé! Le code a été réinitialisé à '@inganibirds2007'"), 2000);
+                                failedAttempts = 0;
+                            } else {
+                                isBanned = true;
+                            }
+                        } else {
+                            const retry = confirm("Vous pouvez encore essayer 3 fois avant un bannissement");
+                            if (retry) {
+                                failedAttempts = 5; // Reset pour avoir 3 nouvelles tentatives
+                            }
+                        }
+                    } else {
+                        alert("Code incorrect!");
+                    }
+                }
+            } else if (failedAttempts < 8) {
+                const code = prompt(`Attention, dernière tentative! (Restantes: ${8 - failedAttempts})`);
+                if (code === "@inganibirds2007") {
+                    adminPanel.classList.remove('hidden');
+                    loadAdminProducts();
+                    failedAttempts = 0;
+                } else {
+                    failedAttempts++;
+                    if (failedAttempts >= 8) {
+                        alert("Accès bloqué - Trop de tentatives. Contactez l'administrateur.");
+                        isBanned = true;
+                    }
+                }
+            } else {
+                alert("Accès bloqué - Contactez l'administrateur pour récupérer l'accès");
+            }
+        });
+
+        // Ajouter un nouveau produit
+        document.getElementById('addProductBtn').addEventListener('click', () => {
+            resetAdminForm();
+        });
+
+        // Annuler l'édition
+        document.getElementById('cancelEdit').addEventListener('click', () => {
+            resetAdminForm();
+        });
+
+        // Écouter les clics sur les boutons d'édition/suppression
+        document.getElementById('adminProductsList').addEventListener('click', (e) => {
+            if (e.target.closest('.admin-edit-btn')) {
+                const productId = e.target.closest('.admin-edit-btn').getAttribute('data-id');
+                const product = products.find(p => p.id == productId);
+                if (product) {
+                    document.getElementById('productId').value = product.id;
+                    document.getElementById('productName').value = product.name;
+                    document.getElementById('productPrice').value = product.price;
+                    document.getElementById('productOriginalPrice').value = product.originalPrice;
+                    document.getElementById('productImage').value = product.image;
+                    document.getElementById('productCategory').value = product.category;
+                }
+            }
+            
+            if (e.target.closest('.admin-delete-btn')) {
+                const productId = e.target.closest('.admin-delete-btn').getAttribute('data-id');
+                if (confirm('Voulez-vous vraiment supprimer ce produit ?')) {
+                    const index = products.findIndex(p => p.id == productId);
+                    if (index !== -1) {
+                        products.splice(index, 1);
+                        loadAdminProducts();
+                        displayProducts();
+                    }
+                }
+            }
+        });
+
+        // Enregistrer les modifications
+        document.getElementById('adminProductForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const productData = {
+                id: document.getElementById('productId').value || Date.now(),
+                name: document.getElementById('productName').value,
+                price: parseInt(document.getElementById('productPrice').value),
+                originalPrice: parseInt(document.getElementById('productOriginalPrice').value),
+                image: document.getElementById('productImage').value,
+                category: document.getElementById('productCategory').value,
+                rating: 4.5 // Valeur par défaut
+            };
+
+            if (document.getElementById('productId').value) {
+                // Édition
+                const index = products.findIndex(p => p.id == document.getElementById('productId').value);
+                if (index !== -1) {
+                    products[index] = productData;
+                }
+            } else {
+                // Ajout
+                products.push(productData);
+            }
+
+            resetAdminForm();
+            loadAdminProducts();
+            displayProducts();
+        });
+
+        // Fermer l'espace administrateur
+        closeAdmin.addEventListener('click', () => {
+            adminPanel.classList.add('hidden');
+        });
+
+        // Timer vente flash
+        let saleTimerInterval;
+        function updateCountdown(endTime) {
+            const now = new Date();
+            const diff = endTime - now;
+            
+            if (diff <= 0) {
+                clearInterval(saleTimerInterval);
+                document.getElementById('countdownDisplay').classList.add('hidden');
+                alert("La vente flash est terminée!");
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            document.getElementById('countdownDays').textContent = days.toString().padStart(2, '0');
+            document.getElementById('countdownHours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('countdownMinutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('countdownSeconds').textContent = seconds.toString().padStart(2, '0');
+            
+            document.getElementById('countdownDisplay').classList.remove('hidden');
+        }
+
+        document.getElementById('startSaleTimer').addEventListener('click', () => {
+            const endTimeString = document.getElementById('saleEndTime').value;
+            if (!endTimeString) {
+                alert("Veuillez entrer une date/heure de fin");
+                return;
+            }
+            
+            const endTime = new Date(endTimeString);
+            if (endTime <= new Date()) {
+                alert("La date/heure doit être dans le futur");
+                return;
+            }
+            
+            clearInterval(saleTimerInterval);
+            updateCountdown(endTime);
+            saleTimerInterval = setInterval(() => updateCountdown(endTime), 1000);
+        });
+
+        // Charger depuis localStorage
+        function loadFromStorage() {
+            const savedProducts = localStorage.getItem('ng_chopi_products');
+            if (savedProducts) {
+                products = JSON.parse(savedProducts);
+            }
+            displayProducts();
+            document.getElementById('productsCount').textContent = products.length;
+        }
+
+        // Sauvegarder dans localStorage
+        document.getElementById('saveProductsBtn').addEventListener('click', () => {
+            localStorage.setItem('ng_chopi_products', JSON.stringify(products));
+            alert('Modifications sauvegardées!');
+        });
+
+        // Afficher les produits au chargement
+        loadFromStorage();
+    </script>
+</body>
+</html>
